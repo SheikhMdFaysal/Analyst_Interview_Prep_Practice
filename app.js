@@ -6,6 +6,11 @@
    ============================================================ */
 
 /* ---------- Constants & derived data ---------- */
+const APP_VERSION = "1.1.0";
+const CHANGELOG = [
+  { v: "1.1.0", date: "2026-06-12", notes: "Glossary (8 sections, 140+ terms) · Practice Hub: curated SQL/Python platforms + 12 built-in case problems · 8 real business-case walkthroughs · developer info & changelog in About · copyright footer" },
+  { v: "1.0.0", date: "2026-06-12", notes: "Initial release: 300 questions across 6 topics, sequential study, category drill, flashcards, mind map, 30 mini quizzes, timed mock exam, mastery/review tracking, search, flags, countdown, themes" }
+];
 const LS_KEY = "interviewPrepState";
 const VERSION = 1;
 const PASS_MARK = 0.8;
@@ -233,6 +238,10 @@ function render() {
     case "mastered": html = masteredView(); break;
     case "review": html = reviewView(); break;
     case "flagged": html = flaggedView(); break;
+    case "glossary": html = glossaryView(); break;
+    case "practice": html = practiceView(); break;
+    case "cases": html = casesView(); break;
+    case "caseDetail": html = caseDetailView(); break;
     default: html = homeView();
   }
   document.getElementById("view").innerHTML = html;
@@ -268,6 +277,14 @@ function afterRender() {
       box.addEventListener("input", () => { searchTerm = box.value; renderSearchResults(); });
       renderSearchResults();
       box.focus();
+    }
+  }
+  if (route.view === "glossary") {
+    const box = document.getElementById("glossBox");
+    if (box) {
+      box.value = glossTerm;
+      box.addEventListener("input", () => { glossTerm = box.value; renderGlossList(); });
+      renderGlossList();
     }
   }
 }
@@ -354,6 +371,9 @@ function modeTiles(passedQuizzes) {
     { icon: "🧠", name: "Mind Map", sub: "Key facts, branch by branch", attrs: 'data-action="mode" data-view="mindmap"' },
     { icon: "📝", name: "Mini Quizzes", sub: passedQuizzes + "/" + QUIZZES.length + " passed · 10 Qs each", attrs: 'data-action="mode" data-view="quizzes"' },
     { icon: "⏱️", name: "Mock Exam", sub: MOCK_SIZE + " Qs · " + MOCK_MINUTES + " min · pass " + (PASS_MARK * 100) + "%", attrs: 'data-action="mode" data-view="mockIntro"' },
+    { icon: "📖", name: "Glossary", sub: "140+ key terms · 8 areas", attrs: 'data-action="mode" data-view="glossary"' },
+    { icon: "💻", name: "Practice Hub", sub: "Platforms + " + PRACTICE.length + " case problems", attrs: 'data-action="mode" data-view="practice"' },
+    { icon: "💼", name: "Business Cases", sub: CASES.length + " real-world walkthroughs", attrs: 'data-action="mode" data-view="cases"' },
     { icon: "🔍", name: "Search", sub: "Find any question fast", attrs: 'data-action="mode" data-view="search"' },
     { icon: "🔀", name: "Shuffle All", sub: "Random run · all " + QUESTIONS.length, attrs: 'data-action="shuffle-all"' }
   ];
@@ -858,7 +878,15 @@ function closeModal() {
 
 function showAbout() {
   showModal(`<h3 id="modalTitle">ℹ️ About this app</h3>
-  <p class="small">Interview prep for <strong>Business / Data / Financial / Credit Analyst</strong> roles — ${QUESTIONS.length} intermediate-level questions across six topics, with sequential study, category drills, flashcards, a mind map, ${QUIZZES.length} mini quizzes, and a timed mock exam.</p>
+  <p class="small">Interview prep for <strong>Business / Data / Financial / Credit Analyst</strong> roles — ${QUESTIONS.length} intermediate-level questions across six topics, with sequential study, category drills, flashcards, a mind map, ${QUIZZES.length} mini quizzes, a timed mock exam, a glossary, a practice hub, and real business-case walkthroughs.</p>
+  <div class="dev-card">
+    <strong>👨‍💻 Developer — Sheikh Md Faysal</strong><br>
+    MS in Business Analytics, Montclair State University · 9+ years in banking &amp; utility finance.<br>
+    📧 <a href="mailto:sober.faysal@gmail.com">sober.faysal@gmail.com</a> ·
+    🔗 <a href="https://github.com/SheikhMdFaysal" target="_blank" rel="noopener">github.com/SheikhMdFaysal</a>
+  </div>
+  <p class="small" style="margin-bottom:.2rem"><strong>📦 Version ${APP_VERSION}</strong></p>
+  <ul class="changelog">${CHANGELOG.map(c => `<li><span class="cl-v">v${c.v}</span> <span class="muted">(${c.date})</span><br>${c.notes}</li>`).join("")}</ul>
   <p class="small"><strong>How mastery works:</strong> answer correctly → <strong>Mastered</strong>. Answer wrong → <strong>Need Review</strong>, until you answer it correctly again. All progress lives in this browser's localStorage — no account, no server.</p>
   <ul class="shortcuts" aria-label="Keyboard shortcuts">
     <li><span>Answer option</span><kbd>1–4</kbd></li>
@@ -985,7 +1013,91 @@ function onAction(e) {
       localStorage.removeItem(LS_KEY);
       location.reload();
       break;
+    case "case-open": go("caseDetail", { id: el.dataset.case }); break;
   }
+}
+
+/* ---------- Glossary ---------- */
+let glossTerm = "";
+const GLOSS_TOTAL = GLOSSARY.reduce((n, s) => n + s.terms.length, 0);
+
+function glossaryView() {
+  return backHeader("Glossary") +
+    `<p class="small muted">${GLOSS_TOTAL} terms across ${GLOSSARY.length} areas — the vocabulary interviewers expect you to use naturally.</p>
+    <input id="glossBox" class="search-box" type="search" placeholder="Filter terms… (e.g. DSCR, window, p-value)" aria-label="Filter glossary terms">
+    <div id="glossList"></div>`;
+}
+
+function renderGlossList() {
+  const el = document.getElementById("glossList");
+  if (!el) return;
+  const term = glossTerm.trim().toLowerCase();
+  const html = GLOSSARY.map(sec => {
+    const terms = sec.terms.filter(x => !term || x.t.toLowerCase().includes(term) || x.d.toLowerCase().includes(term));
+    if (!terms.length) return "";
+    return `<details class="group" ${term ? "open" : ""}>
+      <summary>${sec.icon} ${esc(sec.name)}<span class="badge g-count">${terms.length}</span></summary>
+      <div class="g-body"><dl style="margin:0">` +
+      terms.map(x => `<div class="gloss-term"><dt>${fmt(x.t)}</dt><dd>${fmt(x.d)}</dd></div>`).join("") +
+      `</dl></div></details>`;
+  }).join("");
+  el.innerHTML = html || emptyState("📖", "No matching terms", "Try a shorter word or a different spelling.");
+}
+
+/* ---------- Practice Hub ---------- */
+function practiceView() {
+  let html = backHeader("Practice Hub") +
+    `<p class="small muted">Hands-on practice beats rereading notes. Warm up on the built-in problems below, then drill on the real platforms — links open in a new tab.</p>`;
+  for (const g of PLATFORMS) {
+    html += `<h2 class="section-title">${g.icon} ${esc(g.group)}</h2>` +
+      g.items.map(p => `<a class="link-card" href="${p.url}" target="_blank" rel="noopener">
+        <span class="lc-name">${esc(p.name)} ↗</span>
+        <span class="lc-desc">${esc(p.desc)}</span></a>`).join("");
+  }
+  html += `<h2 class="section-title">🧩 Built-in case problems</h2>
+    <p class="small muted">Real analyst tasks. Sketch your answer in an editor (or on paper) before opening the hint or solution.</p>` +
+    PRACTICE.map(p => `<details class="group">
+      <summary>${p.icon} ${esc(p.title)}<span class="badge ${p.level === "hard" ? "bad" : "warn"} g-count">${p.lang} · ${p.level}</span></summary>
+      <div class="g-body">
+        <p class="small"><strong>Scenario:</strong> ${fmt(p.scenario)}</p>
+        <p class="small"><strong>Your task:</strong> ${fmt(p.task)}</p>
+        <details class="mm-cat"><summary>💡 Hint</summary><p class="small muted">${fmt(p.hint)}</p></details>
+        <details class="mm-cat"><summary>✅ Solution</summary>${fmt(p.solution)}<p class="small muted">${fmt(p.explain)}</p></details>
+      </div></details>`).join("");
+  return html;
+}
+
+/* ---------- Business cases ---------- */
+function casesView() {
+  return backHeader("Business Cases") +
+    `<p class="small muted">Real problems analysts get hired to solve — each with a step-by-step walkthrough using SQL, Python, and BI tools. Ideal prep for case-style interview rounds.</p>` +
+    CASES.map(c => `<button class="quiz-row" data-action="case-open" data-case="${c.id}">
+      <span class="qr-icon" aria-hidden="true">${c.icon}</span>
+      <span class="qr-main"><span class="qr-name">${esc(c.title)}</span><br><span class="qr-sub">${esc(c.domain)} · ${esc(c.tools)}</span></span>
+      <span class="qr-stat">›</span>
+    </button>`).join("");
+}
+
+function caseDetailView() {
+  const c = CASES.find(x => x.id === route.id);
+  if (!c) { route = { view: "cases" }; return casesView(); }
+  return backHeader(c.title) + `
+    <div class="card">
+      <div class="q-meta"><span class="badge cat">${esc(c.domain)}</span><span class="badge">${esc(c.tools)}</span></div>
+      <p class="small"><strong>${c.icon} Scenario:</strong> ${fmt(c.scenario)}</p>
+      <p class="small"><strong>🎯 The ask:</strong> ${fmt(c.ask)}</p>
+    </div>
+    <h2 class="section-title">How an analyst attacks it</h2>
+    <div class="card">` +
+    c.steps.map((s, i) => `<div class="case-step"><span class="cs-num" aria-hidden="true">${i + 1}</span><div><h3>${esc(s.h)}</h3><p>${fmt(s.p)}</p></div></div>`).join("") +
+    `</div>
+    <h2 class="section-title">Sample code</h2>
+    <div class="card">${fmt(c.snippet)}</div>
+    <div class="card takeaway mt"><strong>💡 Takeaway:</strong> ${fmt(c.takeaway)}</div>
+    <div class="r-actions">
+      <button class="btn" data-action="back">‹ All cases</button>
+      <button class="btn" data-action="go-home">🏠 Home</button>
+    </div>`;
 }
 
 /* ---------- Global listeners & init ---------- */
@@ -1048,6 +1160,9 @@ document.addEventListener("keydown", e => {
   }
   if (e.key === "Escape" && route.view !== "home") goBack();
 });
+
+const footVer = document.getElementById("footVersion");
+if (footVer) footVer.textContent = APP_VERSION;
 
 applyTheme();
 render();

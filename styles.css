@@ -646,6 +646,74 @@ details.group .g-body { padding: 0 .7rem .7rem; }
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+/* ---------- Footer ---------- */
+.app-footer {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 1.1rem .9rem 1.4rem;
+  text-align: center;
+  color: var(--muted);
+  font-size: .74rem;
+  border-top: 1px solid var(--border);
+}
+.app-footer p { margin: .15rem 0; }
+.app-footer .f-copy { font-weight: 700; }
+.app-footer a { color: var(--accent); font-weight: 600; text-decoration: none; }
+.app-footer a:hover { text-decoration: underline; }
+
+/* ---------- Glossary ---------- */
+.gloss-term { padding: .55rem 0; border-bottom: 1px dashed var(--border); }
+.gloss-term:last-child { border-bottom: none; }
+.gloss-term dt { font-weight: 700; font-size: .88rem; }
+.gloss-term dd { margin: .15rem 0 0; font-size: .82rem; color: var(--muted); }
+
+/* ---------- External link cards ---------- */
+.link-card {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: .7rem .8rem;
+  margin-bottom: .5rem;
+}
+.link-card:hover { border-color: var(--accent); }
+.link-card .lc-name { display: block; font-weight: 700; font-size: .9rem; color: var(--accent); }
+.link-card .lc-desc { display: block; font-size: .78rem; color: var(--muted); margin-top: .15rem; }
+
+/* ---------- Business cases ---------- */
+.case-step { display: flex; gap: .65rem; margin-bottom: .8rem; }
+.case-step:last-child { margin-bottom: 0; }
+.case-step .cs-num {
+  flex-shrink: 0;
+  width: 1.65rem; height: 1.65rem;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-text);
+  display: grid; place-items: center;
+  font-weight: 800;
+  font-size: .78rem;
+}
+.case-step h3 { margin: .1rem 0 .2rem; font-size: .89rem; }
+.case-step p { margin: 0; font-size: .82rem; color: var(--muted); }
+.takeaway {
+  border-left: 4px solid var(--good);
+  background: var(--good-bg);
+  font-size: .85rem;
+}
+.modal .changelog { padding-left: 0; list-style: none; font-size: .8rem; margin: .3rem 0 0; }
+.modal .changelog li { padding: .3rem 0; border-bottom: 1px dashed var(--border); }
+.modal .changelog .cl-v { font-weight: 800; }
+.modal .dev-card {
+  background: var(--card-2);
+  border-radius: 10px;
+  padding: .65rem .8rem;
+  font-size: .84rem;
+  margin: .6rem 0;
+}
+.modal .dev-card a { color: var(--accent); font-weight: 600; }
+
 /* ---------- Misc ---------- */
 .row { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
 .spacer { flex: 1; }

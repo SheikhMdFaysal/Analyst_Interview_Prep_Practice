@@ -25,17 +25,27 @@ A self-contained, mobile-first practice app for **Business Analyst, Data Analyst
 - **Mastered list** — every question you've answered correctly, grouped by topic, with a random re-test button
 - **Need to Review** — wrong answers collect here automatically and leave when re-answered correctly
 - **Flagging** (press `F`), **full-text search**, **shuffle-all mode**
+- **Glossary** — 140+ key terms across 8 areas (Python, SQL, visualization, statistics, ML, finance, credit & banking, business) with live filtering
+- **Practice Hub** — curated SQL/Python practice platforms (DataLemur, StrataScratch, LeetCode, HackerRank, SQLBolt…) plus 12 built-in real-case problems with hints and worked solutions
+- **Business Cases** — 8 real-world analyst problems (revenue drop, churn, credit watchlist, A/B testing, working capital, marketing ROI, benchmarking, forecasting) with step-by-step walkthroughs and sample code
 - **Interview-day countdown**, light/dark/system **theme**, **export / import** progress as JSON, safe **reset**
 - Keyboard shortcuts: `1–4` answer · `← →` navigate · `F` flag · `Space` flip card · `Esc` back
 
 ## Files
 
 ```
-index.html     app shell
+index.html     app shell + footer
 styles.css     all styling (mobile-first, both themes)
-app.js         all logic (views, sessions, state)
+app.js         all logic (views, sessions, state, version/changelog)
 questions.js   data only — the 300-question bank + mind-map facts
+resources.js   data only — glossary, practice platforms, case problems, business cases
 ```
+
+## Versioning (do this on every change)
+
+1. Bump `APP_VERSION` and add a `CHANGELOG` entry at the top of `app.js` — it shows in the About panel and footer.
+2. Bump the `?v=N` query strings on all CSS/JS tags in `index.html` so phones fetch the new files instead of cached ones.
+3. Commit with the version in the message, e.g. `v1.2.0: add Excel glossary section`.
 
 `questions.js` is pure data. To add questions, append objects with this shape (the app picks up topics, categories, counts, and quizzes automatically):
 
