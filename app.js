@@ -6,8 +6,9 @@
    ============================================================ */
 
 /* ---------- Constants & derived data ---------- */
-const APP_VERSION = "1.1.0";
+const APP_VERSION = "1.2.0";
 const CHANGELOG = [
+  { v: "1.2.0", date: "2026-06-12", notes: "Redesigned Mind Map as a branching node graph with animated connecting curves (NotebookLM style), expandable topic→category→fact nodes, and inline visual diagrams (SQL joins, star schema, normal distribution, statement linkage) · Animated flashcards: real 3D flip, deal-in / slide transitions, deck-stack depth" },
   { v: "1.1.0", date: "2026-06-12", notes: "Glossary (8 sections, 140+ terms) · Practice Hub: curated SQL/Python platforms + 12 built-in case problems · 8 real business-case walkthroughs · developer info & changelog in About · copyright footer" },
   { v: "1.0.0", date: "2026-06-12", notes: "Initial release: 300 questions across 6 topics, sequential study, category drill, flashcards, mind map, 30 mini quizzes, timed mock exam, mastery/review tracking, search, flags, countdown, themes" }
 ];
@@ -220,7 +221,7 @@ function render() {
   // guard views whose backing session is gone (e.g., after tab switch + back)
   if (["question", "sessionEnd", "quizResult", "mockResult"].includes(route.view) && !sess) route = { view: "home" };
   if (route.view === "flash" && !flash) {
-    flash = { topic: "all", deck: QUESTIONS.map(q => q.id), idx: 0, flipped: false };
+    flash = { topic: "all", deck: QUESTIONS.map(q => q.id), idx: 0, flipped: false, dir: "" };
   }
   let html = "";
   switch (route.view) {
@@ -287,6 +288,7 @@ function afterRender() {
       renderGlossList();
     }
   }
+  if (route.view === "mindmap") scheduleMmCurves();
 }
 
 /* ---------- Shared view bits ---------- */
@@ -520,20 +522,28 @@ function categoriesView() {
 /* ---------- Flashcards ---------- */
 function openFlash(topic) {
   const ids = (topic === "all" ? QUESTIONS : QUESTIONS.filter(q => q.topic === topic)).map(q => q.id);
-  flash = { topic: topic, deck: ids, idx: 0, flipped: false };
+  flash = { topic: topic, deck: ids, idx: 0, flipped: false, dir: "" };
   if (route.view === "flash") render(); else go("flash");
+}
+
+/* flip the live card by toggling the class (lets the CSS 3D transition run) */
+function flashFlip() {
+  flash.flipped = !flash.flipped;
+  const c = document.querySelector(".flash-card");
+  if (c) c.classList.toggle("flipped", flash.flipped);
 }
 
 function flashView() {
   const q = QMAP.get(flash.deck[flash.idx]);
   const t = TOPIC_MAP.get(q.topic);
+  const dirCls = flash.dir === "next" ? "dir-next" : flash.dir === "prev" ? "dir-prev" : "";
   const chips = [{ id: "all", name: "All", icon: "🃏" }].concat(TOPICS).map(x =>
     `<button class="chip ${flash.topic === x.id ? "active" : ""}" data-action="flash-topic" data-topic="${x.id}">${x.icon} ${esc(x.name)}</button>`).join("");
   return backHeader("Flash Cards") +
     `<div class="chip-group">${chips}</div>
     <div class="q-progress mt"><span class="count">${flash.idx + 1}/${flash.deck.length}</span><div class="track"><div class="fill" style="width:${100 * (flash.idx + 1) / flash.deck.length}%"></div></div></div>
     <div class="flash-scene">
-      <div class="flash-card ${flash.flipped ? "flipped" : ""}" data-action="flash-flip" role="button" tabindex="0" aria-label="Flashcard — activate to flip">
+      <div class="flash-card ${flash.flipped ? "flipped" : ""} ${dirCls}" data-action="flash-flip" role="button" tabindex="0" aria-label="Flashcard — activate to flip">
         <div class="flash-face front">
           <span class="ff-label">${t.icon} ${esc(q.category)} · question</span>
           <div class="ff-body">${fmt(q.question)}</div>
@@ -559,11 +569,11 @@ function flashView() {
 }
 
 function flashNext() {
-  if (flash.idx < flash.deck.length - 1) { flash.idx++; flash.flipped = false; render(); }
+  if (flash.idx < flash.deck.length - 1) { flash.idx++; flash.flipped = false; flash.dir = "next"; render(); }
   else toast("End of deck — shuffle or switch topic");
 }
 function flashPrev() {
-  if (flash.idx > 0) { flash.idx--; flash.flipped = false; render(); }
+  if (flash.idx > 0) { flash.idx--; flash.flipped = false; flash.dir = "prev"; render(); }
 }
 function flashMark(know) {
   const q = QMAP.get(flash.deck[flash.idx]);
@@ -572,23 +582,83 @@ function flashMark(know) {
   flashNext();
 }
 
-/* ---------- Mind map ---------- */
+/* ---------- Mind map (central root → animated branches) ---------- */
 function mindmapView() {
-  return backHeader("Mind Map") + `<p class="small muted">Six branches — expand a topic, then a category, for the facts interviewers expect you to know cold.</p>` +
-    TOPICS.map(t => {
-      const cats = MINDMAP[t.id] || [];
-      const tm = topicMastered(t.id);
-      return `<details class="mm-topic">
-        <summary><span aria-hidden="true">${t.icon}</span><span>${esc(t.name)}</span><span class="badge">${tm}/${topicCount(t.id)} ✓</span><span class="mm-arrow" aria-hidden="true">›</span></summary>
-        <div class="mm-body">` +
-        cats.map(c => `<details class="mm-cat">
-            <summary>${esc(c.name)}</summary>
-            <ul>${c.facts.map(f => `<li>${fmt(f)}</li>`).join("")}</ul>
-            <button class="btn small" data-action="category" data-topic="${t.id}" data-cat="${esc(c.name)}">Drill this category ›</button>
-          </details>`).join("") +
-        `<button class="btn primary block mt" data-action="branch-quiz" data-topic="${t.id}">⚡ Quiz this branch — 10 random</button>
-        </div></details>`;
-    }).join("");
+  const branches = TOPICS.map((t, i) => {
+    const cats = MINDMAP[t.id] || [];
+    const tc = topicCount(t.id), tm = topicMastered(t.id);
+    const full = tc > 0 && tm === tc;
+    const d = DIAGRAMS[t.id];
+    const diagram = d ? `<div class="mm-diagram">${d.svg}<div class="mm-dcap">${esc(d.cap)}</div></div>` : "";
+    const catNodes = cats.map(c => `
+      <div class="mm-cat-node">
+        <button class="mm-cat-head" data-action="mm-cat-toggle"><span class="mm-cat-name">${esc(c.name)}</span><span class="mm-cat-count">${c.facts.length} facts</span></button>
+        <div class="mm-cat-leaves">
+          ${c.facts.map(f => `<div class="mm-leaf">${fmt(f)}</div>`).join("")}
+          <button class="mm-drill" data-action="category" data-topic="${t.id}" data-cat="${esc(c.name)}">🎯 Drill ${esc(c.name)} ›</button>
+        </div>
+      </div>`).join("");
+    return `<div class="mm-branch" data-i="${i}">
+      <button class="mm-branch-head" data-action="mm-toggle" aria-expanded="false">
+        <span class="ic" aria-hidden="true">${t.icon}</span>
+        <span class="mm-bname">${esc(t.name)}</span>
+        <span class="mm-pill ${full ? "full" : ""}">${tm}/${tc}</span>
+        <span class="mm-toggle" aria-hidden="true">›</span>
+      </button>
+      <div class="mm-leaves">
+        ${diagram}
+        ${catNodes}
+        <div class="mm-actions-row">
+          <button class="mm-btn primary" data-action="branch-quiz" data-topic="${t.id}">🎯 Quiz branch</button>
+          <button class="mm-btn" data-action="branch-flash" data-topic="${t.id}">🃏 Flashcards</button>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+
+  return backHeader("Mind Map") +
+    `<p class="small muted">Tap a topic to branch out into its categories and key facts — with visual diagrams where they help. Each branch has its own quiz and flashcard deck.</p>
+    <div class="mindmap" id="mindmap">
+      <svg class="mm-svg" id="mmSvg" aria-hidden="true"></svg>
+      <div class="mm-stage">
+        <div class="mm-root" id="mmRoot">
+          <span class="mm-ricon" aria-hidden="true">🎯</span>Analyst Interview Prep
+          <span class="mm-sub">${QUESTIONS.length} questions · ${TOPICS.length} topics</span>
+        </div>
+        <div class="mm-branches">${branches}</div>
+      </div>
+    </div>`;
+}
+
+function drawMindMapCurves() {
+  const svg = document.getElementById("mmSvg");
+  const stage = document.querySelector(".mindmap");
+  const root = document.getElementById("mmRoot");
+  if (!svg || !stage || !root) return;
+  const heads = document.querySelectorAll(".mm-branch-head");
+  const sRect = stage.getBoundingClientRect();
+  const rRect = root.getBoundingClientRect();
+  if (!sRect.width) return;
+  svg.setAttribute("viewBox", `0 0 ${sRect.width} ${sRect.height}`);
+  const startX = rRect.right - sRect.left;
+  const startY = rRect.top + rRect.height / 2 - sRect.top;
+  let paths = "";
+  heads.forEach(h => {
+    const r = h.getBoundingClientRect();
+    const endX = r.left - sRect.left;
+    const endY = r.top + r.height / 2 - sRect.top;
+    const dx = endX - startX;
+    const c1x = startX + dx * 0.5, c2x = endX - dx * 0.5;
+    paths += `<path d="M ${startX} ${startY} C ${c1x} ${startY}, ${c2x} ${endY}, ${endX} ${endY}" pathLength="1" fill="none" stroke="var(--accent)" stroke-width="2" stroke-opacity="0.4"/>`;
+  });
+  svg.innerHTML = paths;
+}
+
+let mmRaf = null;
+function scheduleMmCurves() {
+  if (mmRaf) cancelAnimationFrame(mmRaf);
+  mmRaf = requestAnimationFrame(() => requestAnimationFrame(drawMindMapCurves));
+  setTimeout(drawMindMapCurves, 340);
 }
 
 /* ---------- Mini quizzes ---------- */
@@ -981,6 +1051,18 @@ function onAction(e) {
       startSession({ ids, mode: "quiz", title: t.name + " branch quiz" });
       break;
     }
+    case "branch-flash": openFlash(el.dataset.topic); break;
+    case "mm-toggle": {
+      const br = el.closest(".mm-branch");
+      const open = br.classList.toggle("open");
+      el.setAttribute("aria-expanded", open ? "true" : "false");
+      scheduleMmCurves();
+      break;
+    }
+    case "mm-cat-toggle":
+      el.closest(".mm-cat-node").classList.toggle("open");
+      scheduleMmCurves();
+      break;
     case "mock-start": startMock(); break;
     case "start-review": startSession({ ids: reviewIds(), mode: "review", title: "Need to Review" }); break;
     case "study-flagged": startSession({ ids: state.flagged.filter(id => QMAP.has(id)), mode: "study", title: "Flagged questions" }); break;
@@ -988,10 +1070,10 @@ function onAction(e) {
     case "open-one": startSession({ ids: [el.dataset.id], mode: "study", title: "Single question" }); break;
     case "search-open": startSession({ ids: searchIds.slice(), mode: "study", title: "Search results", startIdx: Number(el.dataset.idx) }); break;
     case "flash-topic": openFlash(el.dataset.topic); break;
-    case "flash-flip": flash.flipped = !flash.flipped; render(); break;
+    case "flash-flip": flashFlip(); break;
     case "flash-prev": flashPrev(); break;
     case "flash-next": flashNext(); break;
-    case "flash-shuffle": flash.deck = shuffle(flash.deck); flash.idx = 0; flash.flipped = false; render(); toast("Deck shuffled 🔀"); break;
+    case "flash-shuffle": flash.deck = shuffle(flash.deck); flash.idx = 0; flash.flipped = false; flash.dir = ""; render(); toast("Deck shuffled 🔀"); break;
     case "flash-know": flashMark(true); break;
     case "flash-study": flashMark(false); break;
     case "set-date": showDateModal(); break;
@@ -1119,6 +1201,7 @@ document.querySelectorAll(".nav-btn").forEach(b => b.addEventListener("click", (
 }));
 
 window.addEventListener("popstate", goBack);
+window.addEventListener("resize", () => { if (route.view === "mindmap") scheduleMmCurves(); });
 
 document.addEventListener("change", e => {
   if (e.target && e.target.id === "importFile" && e.target.files && e.target.files[0]) {
@@ -1152,8 +1235,8 @@ document.addEventListener("keydown", e => {
     if (e.key === "f" || e.key === "F") { toggleFlag(sess.ids[sess.idx]); return; }
   }
   if (route.view === "flash" && flash) {
-    if (e.key === " " && !e.target.closest("button")) { flash.flipped = !flash.flipped; render(); e.preventDefault(); return; }
-    if (e.key === "Enter" && e.target.classList && e.target.classList.contains("flash-card")) { flash.flipped = !flash.flipped; render(); e.preventDefault(); return; }
+    if (e.key === " " && !e.target.closest("button")) { flashFlip(); e.preventDefault(); return; }
+    if (e.key === "Enter" && e.target.classList && e.target.classList.contains("flash-card")) { flashFlip(); e.preventDefault(); return; }
     if (e.key === "ArrowRight") { flashNext(); return; }
     if (e.key === "ArrowLeft") { flashPrev(); return; }
     if (e.key === "f" || e.key === "F") { toggleFlag(flash.deck[flash.idx]); return; }

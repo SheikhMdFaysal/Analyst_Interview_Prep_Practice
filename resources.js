@@ -390,3 +390,104 @@ const CASES = [
     snippet: "```\nfrom statsmodels.tsa.holtwinters import ExponentialSmoothing\n\ntrain, test = y[:-12], y[-12:]\nmodel = ExponentialSmoothing(train, trend='add',\n          seasonal='mul', seasonal_periods=12).fit()\nfcst = model.forecast(12)\nmape = (abs(fcst - test) / test).mean() * 100\nnaive = abs(train[-12:].values - test.values) / test.values\nprint(f'HW MAPE {mape:.1f}% vs naive {naive.mean()*100:.1f}%')\n```",
     takeaway: "A budget forecast = statistical base + documented business overlays + scenarios + a monthly variance loop. Always report your model's skill relative to the naive baseline — it keeps you honest and builds finance's trust." }
 ];
+
+/* ============================================================
+   DIAGRAMS — inline SVG visual aids per topic (theme-aware
+   via CSS variables). Shown at the top of a mind-map branch.
+   ============================================================ */
+
+const DIAGRAMS = {
+  sql: {
+    cap: "SQL JOIN types — shaded = rows returned",
+    svg: `<svg viewBox="0 0 304 84" role="img" aria-label="SQL join types Venn diagrams">
+      <defs><clipPath id="jiClip"><circle cx="46" cy="32" r="20"/></clipPath></defs>
+      <circle cx="24" cy="32" r="20" fill="none" stroke="var(--accent)" stroke-width="1.6"/>
+      <circle cx="46" cy="32" r="20" fill="none" stroke="var(--accent)" stroke-width="1.6"/>
+      <g clip-path="url(#jiClip)"><circle cx="24" cy="32" r="20" fill="var(--accent)" fill-opacity="0.85"/></g>
+      <text x="35" y="68" text-anchor="middle" font-size="9" font-weight="700" fill="var(--text)">INNER</text>
+      <circle cx="102" cy="32" r="20" fill="var(--accent)" fill-opacity="0.8" stroke="var(--accent)" stroke-width="1.6"/>
+      <circle cx="124" cy="32" r="20" fill="none" stroke="var(--accent)" stroke-width="1.6"/>
+      <text x="113" y="68" text-anchor="middle" font-size="9" font-weight="700" fill="var(--text)">LEFT</text>
+      <circle cx="180" cy="32" r="20" fill="none" stroke="var(--accent)" stroke-width="1.6"/>
+      <circle cx="202" cy="32" r="20" fill="var(--accent)" fill-opacity="0.8" stroke="var(--accent)" stroke-width="1.6"/>
+      <text x="191" y="68" text-anchor="middle" font-size="9" font-weight="700" fill="var(--text)">RIGHT</text>
+      <circle cx="258" cy="32" r="20" fill="var(--accent)" fill-opacity="0.8" stroke="var(--accent)" stroke-width="1.6"/>
+      <circle cx="280" cy="32" r="20" fill="var(--accent)" fill-opacity="0.8" stroke="var(--accent)" stroke-width="1.6"/>
+      <text x="269" y="68" text-anchor="middle" font-size="9" font-weight="700" fill="var(--text)">FULL</text>
+    </svg>`
+  },
+  bi: {
+    cap: "Star schema — one fact table surrounded by dimensions",
+    svg: `<svg viewBox="0 0 300 196" role="img" aria-label="Star schema diagram">
+      <g stroke="var(--muted)" stroke-width="1.5">
+        <line x1="150" y1="100" x2="150" y2="30"/>
+        <line x1="150" y1="100" x2="150" y2="166"/>
+        <line x1="150" y1="100" x2="52" y2="100"/>
+        <line x1="150" y1="100" x2="248" y2="100"/>
+      </g>
+      <g font-size="10" font-weight="700" text-anchor="middle">
+        <rect x="108" y="80" width="84" height="40" rx="8" fill="var(--accent)"/>
+        <text x="150" y="98" fill="var(--accent-text)">FACT</text>
+        <text x="150" y="111" fill="var(--accent-text)" font-size="8" font-weight="500">Sales</text>
+        <rect x="112" y="10" width="76" height="28" rx="7" fill="var(--card-2)" stroke="var(--border)"/>
+        <text x="150" y="28" fill="var(--text)" font-size="9">Date</text>
+        <rect x="112" y="160" width="76" height="28" rx="7" fill="var(--card-2)" stroke="var(--border)"/>
+        <text x="150" y="178" fill="var(--text)" font-size="9">Store</text>
+        <rect x="6" y="86" width="84" height="28" rx="7" fill="var(--card-2)" stroke="var(--border)"/>
+        <text x="48" y="104" fill="var(--text)" font-size="9">Customer</text>
+        <rect x="210" y="86" width="84" height="28" rx="7" fill="var(--card-2)" stroke="var(--border)"/>
+        <text x="252" y="104" fill="var(--text)" font-size="9">Product</text>
+      </g>
+    </svg>`
+  },
+  analytics: {
+    cap: "Normal distribution — the 68-95-99.7 rule",
+    svg: `<svg viewBox="0 0 300 150" role="img" aria-label="Normal distribution bell curve">
+      <path d="M 20 120 C 90 120, 110 28, 150 28 C 190 28, 210 120, 280 120"
+            fill="var(--accent)" fill-opacity="0.12" stroke="var(--accent)" stroke-width="2"/>
+      <g stroke="var(--border)" stroke-width="1" stroke-dasharray="3 3">
+        <line x1="110" y1="40" x2="110" y2="120"/>
+        <line x1="150" y1="28" x2="150" y2="120"/>
+        <line x1="190" y1="40" x2="190" y2="120"/>
+        <line x1="70" y1="92" x2="70" y2="120"/>
+        <line x1="230" y1="92" x2="230" y2="120"/>
+      </g>
+      <line x1="14" y1="120" x2="286" y2="120" stroke="var(--text)" stroke-width="1.5"/>
+      <g font-size="9" text-anchor="middle" fill="var(--text)">
+        <text x="150" y="138" font-weight="700">μ</text>
+        <text x="110" y="138">-1σ</text><text x="190" y="138">+1σ</text>
+        <text x="70" y="138">-2σ</text><text x="230" y="138">+2σ</text>
+        <text x="150" y="80" font-weight="700" fill="var(--accent)">68%</text>
+        <text x="150" y="108" font-size="8" fill="var(--muted)">95% within ±2σ</text>
+      </g>
+    </svg>`
+  },
+  finance: {
+    cap: "How the three financial statements link",
+    svg: `<svg viewBox="0 0 300 168" role="img" aria-label="Three financial statements linkage">
+      <defs><marker id="fArrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L6,3 L0,6 Z" fill="var(--accent)"/></marker></defs>
+      <g font-size="10" font-weight="700" text-anchor="middle">
+        <rect x="8" y="8" width="120" height="40" rx="8" fill="var(--card-2)" stroke="var(--accent)"/>
+        <text x="68" y="26" fill="var(--text)">Income Stmt</text>
+        <text x="68" y="40" fill="var(--muted)" font-size="8" font-weight="500">→ Net Income</text>
+        <rect x="8" y="120" width="120" height="40" rx="8" fill="var(--card-2)" stroke="var(--accent)"/>
+        <text x="68" y="138" fill="var(--text)">Cash Flow</text>
+        <text x="68" y="152" fill="var(--muted)" font-size="8" font-weight="500">→ Ending cash</text>
+        <rect x="180" y="58" width="112" height="52" rx="8" fill="var(--card-2)" stroke="var(--accent)"/>
+        <text x="236" y="80" fill="var(--text)">Balance</text>
+        <text x="236" y="94" fill="var(--text)">Sheet</text>
+      </g>
+      <g stroke="var(--accent)" stroke-width="1.6" fill="none" marker-end="url(#fArrow)">
+        <path d="M128 24 C 170 24, 176 60, 198 66"/>
+        <path d="M68 48 L 68 118"/>
+        <path d="M128 144 C 172 144, 180 112, 198 104"/>
+      </g>
+      <g font-size="7.5" fill="var(--muted)" font-weight="600">
+        <text x="150" y="40">retained earn.</text>
+        <text x="14" y="88">NI starts CFO</text>
+        <text x="138" y="128">cash balance</text>
+      </g>
+    </svg>`
+  }
+};
