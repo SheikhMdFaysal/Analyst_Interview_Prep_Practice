@@ -850,6 +850,48 @@ details.group .g-body { padding: 0 .7rem .7rem; }
 .gloss-term dt { font-weight: 700; font-size: .88rem; }
 .gloss-term dd { margin: .15rem 0 0; font-size: .82rem; color: var(--muted); }
 
+/* ---------- Resume Q&A ---------- */
+.resume-facts { margin: 0; padding-left: 1.1rem; }
+.resume-facts li { font-size: .82rem; margin-bottom: .4rem; line-height: 1.4; }
+.resume-facts li strong { color: var(--accent); }
+
+.qa-item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: .5rem;
+  overflow: hidden;
+}
+.qa-item > summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: flex-start;
+  gap: .55rem;
+  padding: .6rem .7rem;
+  font-weight: 700;
+  font-size: .85rem;
+  line-height: 1.35;
+}
+.qa-item > summary::-webkit-details-marker { display: none; }
+.qa-item > summary .qa-q {
+  flex-shrink: 0;
+  width: 1.35rem; height: 1.35rem;
+  display: grid; place-items: center;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: .72rem; font-weight: 800;
+}
+.qa-item[open] > summary { border-bottom: 1px solid var(--border); background: var(--card-2); }
+.qa-item[open] > summary .qa-q { background: var(--accent); color: var(--accent-text); }
+.qa-points { margin: 0; padding: .6rem .8rem .7rem 1.4rem; }
+.qa-points li { font-size: .82rem; line-height: 1.45; margin-bottom: .45rem; color: var(--text); }
+.qa-points li::marker { color: var(--accent); }
+.qa-points li:last-child { margin-bottom: 0; }
+.qa-points code { color: var(--accent); }
+.qa-points strong { color: var(--accent); }
+
 /* ---------- External link cards ---------- */
 .link-card {
   display: block;

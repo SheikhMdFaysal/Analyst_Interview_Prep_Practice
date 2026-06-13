@@ -25,6 +25,7 @@ A self-contained, mobile-first practice app for **Business Analyst, Data Analyst
 - **Mastered list** — every question you've answered correctly, grouped by topic, with a random re-test button
 - **Need to Review** — wrong answers collect here automatically and leave when re-answered correctly
 - **Flagging** (press `F`), **full-text search**, **shuffle-all mode**
+- **My Resume Q&A** — 51 probable recruiter questions on your own CV (skills + experience), grouped by area, each revealing bullet-point talking points in your own numbers ($8M recovered, 40% faster reporting, 94% forecast accuracy…), plus a headline-numbers cheat sheet and a filter box
 - **Glossary** — 140+ key terms across 8 areas (Python, SQL, visualization, statistics, ML, finance, credit & banking, business) with live filtering
 - **Practice Hub** — curated SQL/Python practice platforms (DataLemur, StrataScratch, LeetCode, HackerRank, SQLBolt…) plus 12 built-in real-case problems with hints and worked solutions
 - **Business Cases** — 8 real-world analyst problems (revenue drop, churn, credit watchlist, A/B testing, working capital, marketing ROI, benchmarking, forecasting) with step-by-step walkthroughs and sample code
@@ -38,7 +39,8 @@ index.html     app shell + footer
 styles.css     all styling (mobile-first, both themes)
 app.js         all logic (views, sessions, state, version/changelog)
 questions.js   data only — the 300-question bank + mind-map facts
-resources.js   data only — glossary, practice platforms, case problems, business cases
+resources.js   data only — glossary, practice platforms, case problems, business cases, diagrams
+resume.js      data only — personalized recruiter Q&A grounded in the resume
 ```
 
 ## Versioning (do this on every change)
